@@ -284,23 +284,32 @@ const App: React.FC = () => {
   }, []);
 
   const milestoneLabel = useMemo(() => {
-    if (!cleanTimeInDays || cleanTimeInDays < 1) return "";
+    if (cleanTimeInDays === null) return "";
 
-    if (cleanTimeInDays >= 365 * 4) return "4+ years clean 💚";
-    if (cleanTimeInDays >= 365 * 3) return "3 years clean 💚";
-    if (cleanTimeInDays >= 365 * 2) return "2 years clean 💚";
-    if (cleanTimeInDays >= 365 + 182) return "18 months clean 💚";
-    if (cleanTimeInDays >= 365) return "1 year clean 💚";
-    if (cleanTimeInDays >= 180) return "6 months clean 💚";
-    if (cleanTimeInDays >= 90) return "90 days clean 💚";
-    if (cleanTimeInDays >= 30) return "30 days clean 💚";
+    const milestones = [
+      { days: 30, label: "30 days clean 💚" },
+      { days: 90, label: "90 days clean 💚" },
+      { days: 180, label: "6 months clean 💚" },
+      { days: 365, label: "1 year clean 💚" },
+      { days: 365 + 182, label: "18 months clean 💚" },
+      { days: 365 * 2, label: "2 years clean 💚" },
+      { days: 365 * 3, label: "3 years clean 💚" },
+      { days: 365 * 4, label: "4 years clean 💚" },
+    ];
 
-    return "";
+    const nextMilestone = milestones.find((milestone) => cleanTimeInDays < milestone.days);
+
+    if (nextMilestone) {
+      return `Next milestone: ${nextMilestone.label}`;
+    }
+
+    return "Next milestone: keep stacking days 💚";
   }, [cleanTimeInDays]);
 
-  const today = new Date();
-  const dayKey = today.getFullYear() * 1000 + (today.getMonth() + 1) * 50 + today.getDate();
-  const affirmation = AFFIRMATIONS[Math.abs(dayKey) % AFFIRMATIONS.length];
+  const affirmation = useMemo(() => {
+    const randomIndex = Math.floor(Math.random() * AFFIRMATIONS.length);
+    return AFFIRMATIONS[randomIndex];
+  }, []);
 
   useEffect(() => {
     if (!cleanTimeLabel) return;
@@ -541,6 +550,7 @@ const styles = StyleSheet.create({
     color: "#4F5E57",
     textAlign: "center",
     lineHeight: 20,
+    fontStyle: "italic",
   },
 });
 
