@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 
 import { palette } from "../theme";
-import { formatDisplayDate, parseDateInput, toISODate } from "../utils/date";
+import { formatDisplayDate } from "../utils/date";
 import GlassCard from "./GlassCard";
 
 type Props = {
@@ -17,16 +17,9 @@ type Props = {
 
 const DateInputCard: React.FC<Props> = ({ value, onChange, onSave, error }) => {
   const [showPicker, setShowPicker] = useState(false);
-  const [webInput, setWebInput] = useState(value ? toISODate(value) : "");
-
-  useEffect(() => {
-    if (value) {
-      setWebInput(toISODate(value));
-    }
-  }, [value]);
 
   const label = useMemo(() => {
-    if (!value) return "Choose your sober start date";
+    if (!value) return "Choose your sober date";
     return formatDisplayDate(value);
   }, [value]);
 
@@ -39,20 +32,12 @@ const DateInputCard: React.FC<Props> = ({ value, onChange, onSave, error }) => {
     }
   };
 
-  const handleWebInput = (text: string) => {
-    setWebInput(text);
-    const parsed = parseDateInput(text);
-    if (parsed) {
-      onChange(parsed.date);
-    }
-  };
-
   return (
     <GlassCard>
       <View style={styles.headerRow}>
-        <Text style={styles.label}>Sober since</Text>
+        <Text style={styles.label}>Your sober date</Text>
         <View style={styles.badge}>
-          <Text style={styles.hint}>Tap to set a date</Text>
+          <Text style={styles.hint}>Tap to pick a date</Text>
         </View>
       </View>
 
@@ -67,20 +52,9 @@ const DateInputCard: React.FC<Props> = ({ value, onChange, onSave, error }) => {
         <Text style={styles.pickerValue}>{label}</Text>
       </Pressable>
 
-      {Platform.OS === "web" ? (
-        <View style={styles.webInputWrapper}>
-          <input
-            type="date"
-            value={webInput}
-            onChange={(e) => handleWebInput(e.target.value)}
-            style={styles.webDateInput as React.CSSProperties}
-          />
-        </View>
-      ) : null}
-
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      {showPicker && Platform.OS !== "web" ? (
+      {showPicker ? (
         <DateTimePicker
           value={value ?? new Date()}
           mode="date"
@@ -172,23 +146,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.3,
-  },
-  webInputWrapper: {
-    width: "100%",
-    alignSelf: "stretch",
-  },
-  webDateInput: {
-    appearance: "none",
-    width: "100%",
-    boxSizing: "border-box",
-    borderRadius: 12,
-    border: `1px solid ${palette.cardBorder}`,
-    padding: "12px",
-    background: "rgba(255,255,255,0.04)",
-    color: palette.textPrimary,
-    marginBottom: 10,
-    outline: "none",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.3)",
   },
 });
 

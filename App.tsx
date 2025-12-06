@@ -16,7 +16,6 @@ import AppHeader from "./components/AppHeader";
 import DateInputCard from "./components/DateInputCard";
 import FooterNote from "./components/FooterNote";
 import ReminderToggle from "./components/ReminderToggle";
-import StatsSection from "./components/StatsSection";
 import { useDailyReminder } from "./hooks/useDailyReminder";
 import { useSoberDate } from "./hooks/useSoberDate";
 import { palette } from "./theme";
@@ -57,9 +56,9 @@ const RECOVERY_LINES = [
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-const getSoberStats = (dateString: string) => {
-  if (!dateString) return { totalDays: null, formattedLabel: "" };
-  const parsed = new Date(dateString);
+const getSoberStats = (dateValue: Date | null) => {
+  if (!dateValue) return { totalDays: null, formattedLabel: "" };
+  const parsed = new Date(dateValue);
   if (Number.isNaN(parsed.getTime())) return { totalDays: null, formattedLabel: "" };
 
   const today = new Date();
@@ -67,23 +66,22 @@ const getSoberStats = (dateString: string) => {
   const totalDays = Math.floor(diff / MS_PER_DAY);
 
   if (totalDays < 365) {
-    return { totalDays, formattedLabel: `${totalDays} days sober` };
+    return { totalDays, formattedLabel: `${totalDays} day${totalDays === 1 ? "" : "s"}` };
   }
 
   if (totalDays < 365 * 2) {
     const months = Math.floor(totalDays / 30);
-    return { totalDays, formattedLabel: `${months} months sober` };
+    return { totalDays, formattedLabel: `${months} month${months === 1 ? "" : "s"}` };
   }
 
   const years = Math.floor(totalDays / 365);
-  return { totalDays, formattedLabel: `${years} years sober` };
+  return { totalDays, formattedLabel: `${years} year${years === 1 ? "" : "s"}` };
 };
 
 const App: React.FC = () => {
   const glowOneAnim = React.useRef(new Animated.Value(0)).current;
   const glowTwoAnim = React.useRef(new Animated.Value(0)).current;
   const [firstName, setFirstName] = useState("");
-  const [soberDate, setSoberDate] = useState("");
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
   const [profileError, setProfileError] = useState("");
 
@@ -176,7 +174,6 @@ const App: React.FC = () => {
     daysSober,
     error,
     saveSoberDate,
-    clearSoberDate,
   } = useSoberDate();
 
   const {
@@ -195,14 +192,11 @@ const App: React.FC = () => {
         const stored = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
-          const hasName = typeof parsed?.firstName === "string" && parsed.firstName.trim().length > 0;
-          const hasDate =
-            typeof parsed?.soberDate === "string" &&
-            !Number.isNaN(new Date(parsed.soberDate).getTime());
+          const hasName =
+            typeof parsed?.firstName === "string" && parsed.firstName.trim().length > 0;
 
-          if (hasName && hasDate) {
+          if (hasName) {
             setFirstName(parsed.firstName);
-            setSoberDate(parsed.soberDate);
             setIsProfileModalVisible(false);
             return;
           }
@@ -219,26 +213,18 @@ const App: React.FC = () => {
   const handleProfileSave = async () => {
     setProfileError("");
     const name = firstName.trim();
-    const dateString = soberDate.trim();
 
     if (!name) {
       setProfileError("Please enter your name.");
       return;
     }
 
-    const parsedDate = new Date(dateString);
-    if (Number.isNaN(parsedDate.getTime())) {
-      setProfileError("Enter a valid sober date (YYYY-MM-DD).");
-      return;
-    }
-
     try {
       await AsyncStorage.setItem(
         PROFILE_STORAGE_KEY,
-        JSON.stringify({ firstName: name, soberDate: dateString })
+        JSON.stringify({ firstName: name })
       );
       setFirstName(name);
-      setSoberDate(dateString);
       setIsProfileModalVisible(false);
     } catch (e) {
       console.warn("Failed to save profile", e);
@@ -273,17 +259,23 @@ const App: React.FC = () => {
     return `Daily nudge at ${timeLabel}.`;
   }, [nextReminderTime]);
 
-  const { formattedLabel } = useMemo(() => getSoberStats(soberDate), [soberDate]);
+  const { formattedLabel } = useMemo(
+    () => getSoberStats(savedSoberDate),
+    [savedSoberDate]
+  );
 
   const dailyRecoveryLine = useMemo(() => {
     const daysSinceEpoch = Math.floor(Date.now() / MS_PER_DAY);
     return RECOVERY_LINES[daysSinceEpoch % RECOVERY_LINES.length];
   }, []);
 
-  const headerLine =
-    !isProfileModalVisible && firstName && formattedLabel
-      ? `${firstName}, you have ${formattedLabel}.`
-      : "Welcome. Let's set your sober date.";
+  const headerLine = isProfileModalVisible
+    ? "Welcome. Let's set your name to start."
+    : firstName && formattedLabel
+    ? `${firstName}, you have ${formattedLabel} clean time.`
+    : firstName
+    ? `${firstName}, set your sober date to start tracking.`
+    : "Welcome. Let's set your name to start.";
 
   return (
     <View style={styles.root}>
@@ -317,13 +309,6 @@ const App: React.FC = () => {
                 value={firstName}
                 onChangeText={setFirstName}
               />
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={palette.textFaint}
-                value={soberDate}
-                onChangeText={setSoberDate}
-              />
               {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
               <Pressable style={styles.primaryButton} onPress={handleProfileSave}>
                 <Text style={styles.primaryButtonText}>Save</Text>
@@ -336,12 +321,6 @@ const App: React.FC = () => {
             onChange={setSelectedDate}
             onSave={saveSoberDate}
             error={error}
-          />
-
-          <StatsSection
-            savedDate={savedSoberDate}
-            daysSober={daysSober}
-            onReset={clearSoberDate}
           />
 
           <ReminderToggle
