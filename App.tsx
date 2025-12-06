@@ -1,11 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Animated,
   Easing,
+  Pressable,
   SafeAreaView,
   StyleSheet,
+  Text,
+  TextInput,
   View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 
 import AppHeader from "./components/AppHeader";
@@ -17,9 +21,71 @@ import { useDailyReminder } from "./hooks/useDailyReminder";
 import { useSoberDate } from "./hooks/useSoberDate";
 import { palette } from "./theme";
 
+const PROFILE_STORAGE_KEY = "easydoesit_profile";
+
+const RECOVERY_LINES = [
+  "Just for today is enough.",
+  "You don’t have to solve tomorrow.",
+  "Stay where your feet are.",
+  "Progress still counts, even when it’s quiet.",
+  "Today doesn’t need to be perfect.",
+  "Go gently.",
+  "This still counts.",
+  "Showing up is the work.",
+  "Small steps are real steps.",
+  "You are allowed to take this one day at a time.",
+  "Nothing has to be decided today.",
+  "You’re doing the best you can with today.",
+  "It’s okay to move slowly.",
+  "This moment is survivable.",
+  "You don’t have to do this alone.",
+  "Rest is part of the work.",
+  "Keep what helps. Let the rest go.",
+  "You can stop for a breath.",
+  "Change adds up.",
+  "Time lived differently matters.",
+  "This is becoming part of who you are.",
+  "You’ve already chosen differently today.",
+  "Consistency doesn’t have to be loud.",
+  "Steady is strong.",
+  "Cravings pass. You stay.",
+  "Feelings aren’t commands.",
+  "You don’t need to escape this moment.",
+  "This wave will break.",
+  "Make it to the next ten minutes.",
+];
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+const getSoberStats = (dateString: string) => {
+  if (!dateString) return { totalDays: null, formattedLabel: "" };
+  const parsed = new Date(dateString);
+  if (Number.isNaN(parsed.getTime())) return { totalDays: null, formattedLabel: "" };
+
+  const today = new Date();
+  const diff = Math.max(0, today.getTime() - parsed.getTime());
+  const totalDays = Math.floor(diff / MS_PER_DAY);
+
+  if (totalDays < 365) {
+    return { totalDays, formattedLabel: `${totalDays} days sober` };
+  }
+
+  if (totalDays < 365 * 2) {
+    const months = Math.floor(totalDays / 30);
+    return { totalDays, formattedLabel: `${months} months sober` };
+  }
+
+  const years = Math.floor(totalDays / 365);
+  return { totalDays, formattedLabel: `${years} years sober` };
+};
+
 const App: React.FC = () => {
   const glowOneAnim = React.useRef(new Animated.Value(0)).current;
   const glowTwoAnim = React.useRef(new Animated.Value(0)).current;
+  const [firstName, setFirstName] = useState("");
+  const [soberDate, setSoberDate] = useState("");
+  const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
+  const [profileError, setProfileError] = useState("");
 
   React.useEffect(() => {
     const loopGlow = (
@@ -123,6 +189,63 @@ const App: React.FC = () => {
   } = useDailyReminder();
   const [guardError, setGuardError] = useState("");
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const hasName = typeof parsed?.firstName === "string" && parsed.firstName.trim().length > 0;
+          const hasDate =
+            typeof parsed?.soberDate === "string" &&
+            !Number.isNaN(new Date(parsed.soberDate).getTime());
+
+          if (hasName && hasDate) {
+            setFirstName(parsed.firstName);
+            setSoberDate(parsed.soberDate);
+            setIsProfileModalVisible(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load profile", e);
+      }
+      setIsProfileModalVisible(true);
+    };
+
+    loadProfile();
+  }, []);
+
+  const handleProfileSave = async () => {
+    setProfileError("");
+    const name = firstName.trim();
+    const dateString = soberDate.trim();
+
+    if (!name) {
+      setProfileError("Please enter your name.");
+      return;
+    }
+
+    const parsedDate = new Date(dateString);
+    if (Number.isNaN(parsedDate.getTime())) {
+      setProfileError("Enter a valid sober date (YYYY-MM-DD).");
+      return;
+    }
+
+    try {
+      await AsyncStorage.setItem(
+        PROFILE_STORAGE_KEY,
+        JSON.stringify({ firstName: name, soberDate: dateString })
+      );
+      setFirstName(name);
+      setSoberDate(dateString);
+      setIsProfileModalVisible(false);
+    } catch (e) {
+      console.warn("Failed to save profile", e);
+      setProfileError("Could not save profile.");
+    }
+  };
+
   const handleReminderToggle = async () => {
     if (!savedSoberDate) {
       setGuardError("Save a sober date first.");
@@ -150,6 +273,18 @@ const App: React.FC = () => {
     return `Daily nudge at ${timeLabel}.`;
   }, [nextReminderTime]);
 
+  const { formattedLabel } = useMemo(() => getSoberStats(soberDate), [soberDate]);
+
+  const dailyRecoveryLine = useMemo(() => {
+    const daysSinceEpoch = Math.floor(Date.now() / MS_PER_DAY);
+    return RECOVERY_LINES[daysSinceEpoch % RECOVERY_LINES.length];
+  }, []);
+
+  const headerLine =
+    !isProfileModalVisible && firstName && formattedLabel
+      ? `${firstName}, you have ${formattedLabel}.`
+      : "Welcome. Let's set your sober date.";
+
   return (
     <View style={styles.root}>
       <LinearGradient
@@ -166,6 +301,35 @@ const App: React.FC = () => {
             title="One Day at a Time"
             subtitle="Private, local, and focused on your streak."
           />
+
+          <View style={styles.headerCopy}>
+            <Text style={styles.primaryLine}>{headerLine}</Text>
+            <Text style={styles.recoveryLine}>{dailyRecoveryLine}</Text>
+          </View>
+
+          {isProfileModalVisible ? (
+            <View style={styles.profileCard}>
+              <Text style={styles.profileTitle}>Set up your profile</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="First name"
+                placeholderTextColor={palette.textFaint}
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={palette.textFaint}
+                value={soberDate}
+                onChangeText={setSoberDate}
+              />
+              {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
+              <Pressable style={styles.primaryButton} onPress={handleProfileSave}>
+                <Text style={styles.primaryButtonText}>Save</Text>
+              </Pressable>
+            </View>
+          ) : null}
 
           <DateInputCard
             value={selectedDate}
@@ -216,6 +380,59 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
     zIndex: 2,
+  },
+  headerCopy: {
+    alignItems: "center",
+    gap: 6,
+  },
+  primaryLine: {
+    color: palette.textPrimary,
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  recoveryLine: {
+    color: palette.textFaint,
+    fontSize: 13,
+    textAlign: "center",
+  },
+  profileCard: {
+    width: "100%",
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: palette.backgroundAlt,
+    borderWidth: 1,
+    borderColor: palette.cardBorder,
+    gap: 10,
+  },
+  profileTitle: {
+    color: palette.textPrimary,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  input: {
+    backgroundColor: palette.background,
+    borderColor: palette.cardBorder,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: palette.textPrimary,
+  },
+  primaryButton: {
+    backgroundColor: palette.accent,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  primaryButtonText: {
+    color: palette.textPrimary,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  errorText: {
+    color: palette.error,
+    fontSize: 13,
   },
   glowOne: {
     position: "absolute",
