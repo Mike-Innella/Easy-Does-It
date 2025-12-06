@@ -1,107 +1,38 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Animated,
-  Easing,
-  Pressable,
-  Platform,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Animated, Easing, Pressable, SafeAreaView, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 
 import AppHeader from "./components/AppHeader";
 import DateInputCard from "./components/DateInputCard";
+import CleanTimeCard from "./components/CleanTimeCard";
 import FooterNote from "./components/FooterNote";
+import ProfileCard from "./components/ProfileCard";
 import ReminderToggle from "./components/ReminderToggle";
+import { getNextMilestoneLabel } from "./lib/milestones";
+import { formatCleanTimeLabel, getSoberStats } from "./lib/soberStats";
+import { useAffirmation } from "./hooks/useAffirmation";
+import { useDailyRecoveryLine } from "./hooks/useDailyRecoveryLine";
 import { useDailyReminder } from "./hooks/useDailyReminder";
 import { useSoberDate } from "./hooks/useSoberDate";
-import { palette } from "./theme";
+import { palette } from "./ui/theme";
+import { appStyles as styles } from "./ui/appStyles";
 
 const PROFILE_STORAGE_KEY = "easydoesit_profile";
 
-const RECOVERY_LINES = [
-  "Just for today is enough.",
-  "You don’t have to solve tomorrow.",
-  "Stay where your feet are.",
-  "Progress still counts, even when it’s quiet.",
-  "Today doesn’t need to be perfect.",
-  "Go gently.",
-  "This still counts.",
-  "Showing up is the work.",
-  "Small steps are real steps.",
-  "You are allowed to take this one day at a time.",
-  "Nothing has to be decided today.",
-  "You’re doing the best you can with today.",
-  "It’s okay to move slowly.",
-  "This moment is survivable.",
-  "You don’t have to do this alone.",
-  "Rest is part of the work.",
-  "Keep what helps. Let the rest go.",
-  "You can stop for a breath.",
-  "Change adds up.",
-  "Time lived differently matters.",
-  "This is becoming part of who you are.",
-  "You’ve already chosen differently today.",
-  "Consistency doesn’t have to be loud.",
-  "Steady is strong.",
-  "Cravings pass. You stay.",
-  "Feelings aren’t commands.",
-  "You don’t need to escape this moment.",
-  "This wave will break.",
-  "Make it to the next ten minutes.",
-];
-
-const AFFIRMATIONS = [
-  "You did the hard thing by showing up today.",
-  "One honest day at a time is enough.",
-  "You are not your past—you are your next choice.",
-  "Slow progress is still real progress.",
-  "You deserve a life that doesn’t hurt to live.",
-  "You’re allowed to be proud of surviving.",
-  "Your feelings are real, but they are not a relapse plan.",
-  "Today is a chance, not a sentence.",
-];
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-const getSoberStats = (dateValue: Date | null) => {
-  if (!dateValue) return { totalDays: null, formattedLabel: "" };
-  const parsed = new Date(dateValue);
-  if (Number.isNaN(parsed.getTime())) return { totalDays: null, formattedLabel: "" };
-
-  const today = new Date();
-  const diff = Math.max(0, today.getTime() - parsed.getTime());
-  const totalDays = Math.floor(diff / MS_PER_DAY);
-
-  if (totalDays < 365) {
-    return { totalDays, formattedLabel: `${totalDays} day${totalDays === 1 ? "" : "s"}` };
-  }
-
-  if (totalDays < 365 * 2) {
-    const months = Math.floor(totalDays / 30);
-    return { totalDays, formattedLabel: `${months} month${months === 1 ? "" : "s"}` };
-  }
-
-  const years = Math.floor(totalDays / 365);
-  return { totalDays, formattedLabel: `${years} year${years === 1 ? "" : "s"}` };
-};
-
 const App: React.FC = () => {
-  const glowOneAnim = React.useRef(new Animated.Value(0)).current;
-  const glowTwoAnim = React.useRef(new Animated.Value(0)).current;
-  const glowThreeAnim = React.useRef(new Animated.Value(0)).current;
-  const glowFourAnim = React.useRef(new Animated.Value(0)).current;
-  const glowFiveAnim = React.useRef(new Animated.Value(0)).current;
-  const cleanTimeAnim = useRef(new Animated.Value(0)).current;
+  // Animated glow layers for background ambience
+  const glowOneAnim = useRef(new Animated.Value(0)).current;
+  const glowTwoAnim = useRef(new Animated.Value(0)).current;
+  const glowThreeAnim = useRef(new Animated.Value(0)).current;
+  const glowFourAnim = useRef(new Animated.Value(0)).current;
+  const glowFiveAnim = useRef(new Animated.Value(0)).current;
   const [firstName, setFirstName] = useState("");
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
   const [profileError, setProfileError] = useState("");
 
   React.useEffect(() => {
+    // Loop a gentle in/out animation for each glow to keep the background moving
     const loopGlow = (
       value: Animated.Value,
       duration: number,
@@ -288,6 +219,7 @@ const App: React.FC = () => {
   const [guardError, setGuardError] = useState("");
 
   useEffect(() => {
+    // Pull the saved name from storage on startup to decide if we should show the profile card
     const loadProfile = async () => {
       try {
         const stored = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
@@ -333,11 +265,13 @@ const App: React.FC = () => {
     }
   };
 
+  // Reopen the name modal when the user taps "Change name"
   const handleOpenProfile = () => {
     setProfileError("");
     setIsProfileModalVisible(true);
   };
 
+  // Require a saved date before allowing reminders
   const handleReminderToggle = async () => {
     if (!savedSoberDate) {
       setGuardError("Save a sober date first.");
@@ -365,67 +299,16 @@ const App: React.FC = () => {
     return `Daily nudge at ${timeLabel}.`;
   }, [nextReminderTime]);
 
+  // Clean time stats from saved date
   const { totalDays: cleanTimeInDays, formattedLabel } = useMemo(
     () => getSoberStats(savedSoberDate),
     [savedSoberDate]
   );
 
-  const cleanTimeLabel = formattedLabel ? `${formattedLabel} clean` : "";
-
-  const dailyRecoveryLine = useMemo(() => {
-    const daysSinceEpoch = Math.floor(Date.now() / MS_PER_DAY);
-    return RECOVERY_LINES[daysSinceEpoch % RECOVERY_LINES.length];
-  }, []);
-
-  const milestoneLabel = useMemo(() => {
-    if (cleanTimeInDays === null) return "";
-
-    const milestones = [
-      { days: 30, label: "30 days clean 💚" },
-      { days: 90, label: "90 days clean 💚" },
-      { days: 180, label: "6 months clean 💚" },
-      { days: 365, label: "1 year clean 💚" },
-      { days: 365 + 182, label: "18 months clean 💚" },
-      { days: 365 * 2, label: "2 years clean 💚" },
-      { days: 365 * 3, label: "3 years clean 💚" },
-      { days: 365 * 4, label: "4 years clean 💚" },
-    ];
-
-    const nextMilestone = milestones.find((milestone) => cleanTimeInDays < milestone.days);
-
-    if (nextMilestone) {
-      return `Next milestone: ${nextMilestone.label}`;
-    }
-
-    return "Next milestone: keep stacking days 💚";
-  }, [cleanTimeInDays]);
-
-  const affirmation = useMemo(() => {
-    const randomIndex = Math.floor(Math.random() * AFFIRMATIONS.length);
-    return AFFIRMATIONS[randomIndex];
-  }, []);
-
-  useEffect(() => {
-    if (!cleanTimeLabel) return;
-
-    cleanTimeAnim.setValue(0);
-
-    Animated.timing(cleanTimeAnim, {
-      toValue: 1,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-  }, [cleanTimeLabel, cleanTimeAnim]);
-
-  const cleanTimeScale = cleanTimeAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.05],
-  });
-
-  const cleanTimeOpacity = cleanTimeAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.4, 1],
-  });
+  const cleanTimeLabel = formatCleanTimeLabel(formattedLabel);
+  const dailyRecoveryLine = useDailyRecoveryLine();
+  const milestoneLabel = useMemo(() => getNextMilestoneLabel(cleanTimeInDays), [cleanTimeInDays]);
+  const affirmation = useAffirmation();
 
   const headerLine = isProfileModalVisible
     ? "Welcome. Let's set your name to start."
@@ -465,21 +348,14 @@ const App: React.FC = () => {
             ) : null}
           </View>
 
+          {/* First ask for name, then show date picker and streak */}
           {isProfileModalVisible ? (
-            <View style={styles.profileCard}>
-              <Text style={styles.profileTitle}>Set up your profile</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="First name"
-                placeholderTextColor={palette.textFaint}
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-              {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
-              <Pressable style={styles.primaryButton} onPress={handleProfileSave}>
-                <Text style={styles.primaryButtonText}>Save</Text>
-              </Pressable>
-            </View>
+            <ProfileCard
+              value={firstName}
+              onChange={setFirstName}
+              error={profileError}
+              onSave={handleProfileSave}
+            />
           ) : null}
 
           {!isProfileModalVisible ? (
@@ -494,21 +370,11 @@ const App: React.FC = () => {
               />
 
               {cleanTimeLabel ? (
-                <View style={styles.cleanTimeCard}>
-                  <Animated.Text
-                    style={[
-                      styles.cleanTimeText,
-                      {
-                        transform: [{ scale: cleanTimeScale }],
-                        opacity: cleanTimeOpacity,
-                      },
-                    ]}
-                  >
-                    {cleanTimeLabel}
-                  </Animated.Text>
-                  {!!milestoneLabel && <Text style={styles.milestoneText}>{milestoneLabel}</Text>}
-                  <Text style={styles.affirmationText}>{affirmation}</Text>
-                </View>
+                <CleanTimeCard
+                  cleanTimeLabel={cleanTimeLabel}
+                  milestoneLabel={milestoneLabel}
+                  affirmation={affirmation}
+                />
               ) : null}
             </>
           ) : null}
@@ -527,191 +393,5 @@ const App: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: palette.background,
-    ...(Platform.OS === "web" ? { minHeight: "100vh" } : null),
-  },
-  safeArea: {
-    flex: 1,
-    zIndex: 2,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    paddingTop: 60,
-    justifyContent: "center",
-    alignItems: "stretch",
-    gap: 16,
-    maxWidth: 820,
-    width: "100%",
-    alignSelf: "center",
-    zIndex: 2,
-  },
-  headerCopy: {
-    alignItems: "center",
-    gap: 6,
-  },
-  primaryLine: {
-    color: palette.textPrimary,
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  recoveryLine: {
-    color: palette.textFaint,
-    fontSize: 13,
-    textAlign: "center",
-  },
-  secondaryLink: {
-    marginTop: 6,
-  },
-  secondaryLinkText: {
-    color: palette.accent,
-    fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  profileCard: {
-    width: "100%",
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: palette.backgroundAlt,
-    borderWidth: 1,
-    borderColor: palette.cardBorder,
-    gap: 10,
-  },
-  profileTitle: {
-    color: palette.textPrimary,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  input: {
-    backgroundColor: palette.background,
-    borderColor: palette.cardBorder,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: palette.textPrimary,
-  },
-  primaryButton: {
-    backgroundColor: palette.accent,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: palette.textPrimary,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  errorText: {
-    color: palette.error,
-    fontSize: 13,
-  },
-  glowOne: {
-    position: "absolute",
-    top: -220,
-    left: -140,
-    width: 320,
-    height: 320,
-    backgroundColor: palette.accent,
-    opacity: 0.1,
-    borderRadius: 220,
-    shadowColor: palette.accent,
-    shadowOpacity: 0.5,
-    shadowRadius: 90,
-    shadowOffset: { width: 0, height: 0 },
-    zIndex: 0,
-  },
-  glowTwo: {
-    position: "absolute",
-    bottom: -240,
-    right: -140,
-    width: 340,
-    height: 340,
-    backgroundColor: palette.accentDeep,
-    opacity: 0.12,
-    borderRadius: 260,
-    shadowColor: palette.accentDeep,
-    shadowOpacity: 0.6,
-    shadowRadius: 110,
-    shadowOffset: { width: 0, height: 0 },
-    zIndex: 0,
-  },
-  glowThree: {
-    position: "absolute",
-    bottom: -120,
-    left: -160,
-    width: 220,
-    height: 220,
-    backgroundColor: palette.accentSecondary,
-    borderRadius: 200,
-    shadowColor: palette.accentSecondary,
-    shadowOpacity: 0.4,
-    shadowRadius: 80,
-    shadowOffset: { width: 0, height: 0 },
-    zIndex: 0,
-  },
-  glowFour: {
-    position: "absolute",
-    bottom: 140,
-    left: 120,
-    width: 180,
-    height: 180,
-    backgroundColor: "#5ed0ff",
-    borderRadius: 180,
-    shadowColor: "#5ed0ff",
-    shadowOpacity: 0.35,
-    shadowRadius: 70,
-    shadowOffset: { width: 0, height: 0 },
-    zIndex: 0,
-  },
-  glowFive: {
-    position: "absolute",
-    top: -160,
-    right: -80,
-    width: 160,
-    height: 160,
-    backgroundColor: "#2dd36f",
-    borderRadius: 160,
-    shadowColor: "#2dd36f",
-    shadowOpacity: 0.35,
-    shadowRadius: 70,
-    shadowOffset: { width: 0, height: 0 },
-    zIndex: 0,
-  },
-  cleanTimeCard: {
-    marginTop: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    backgroundColor: "#E9F6EF",
-    alignItems: "center",
-  },
-  cleanTimeText: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#2F8F5B",
-  },
-  milestoneText: {
-    marginTop: 4,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2F8F5B",
-  },
-  affirmationText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#4F5E57",
-    textAlign: "center",
-    lineHeight: 20,
-    fontStyle: "italic",
-  },
-});
 
 export default App;

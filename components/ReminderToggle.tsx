@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
-import { palette } from "../theme";
+import { palette } from "../ui/theme";
 
 type Props = {
   enabled: boolean;

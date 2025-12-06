@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
-import { palette } from "../theme";
+import { palette } from "../ui/theme";
 
 const FooterNote: React.FC = () => {
   return (

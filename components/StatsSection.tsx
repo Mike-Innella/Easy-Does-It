@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { palette } from "../theme";
+import { palette } from "../ui/theme";
 import { formatDisplayDate } from "../utils/date";
 import GlassCard from "./GlassCard";
 

@@ -23,6 +23,7 @@ const getNextMorningTrigger = () => {
 };
 
 export const useDailyReminder = () => {
+  // Track scheduled reminder id and expose toggle helpers
   const [reminderId, setReminderId] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);

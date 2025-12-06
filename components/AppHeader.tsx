@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { palette } from "../theme";
+import { palette } from "../ui/theme";
 
 type Props = {
   title: string;

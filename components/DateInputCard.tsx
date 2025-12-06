@@ -4,7 +4,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 
-import { palette } from "../theme";
+import { palette } from "../ui/theme";
 import { formatDisplayDate } from "../utils/date";
 import GlassCard from "./GlassCard";
 
@@ -25,6 +25,7 @@ const DateInputCard: React.FC<Props> = ({
   showReset,
   error,
 }) => {
+  // Toggle native date picker and format the chosen date for display
   const [showPicker, setShowPicker] = useState(false);
 
   const label = useMemo(() => {

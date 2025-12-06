@@ -5,6 +5,7 @@ import { calculateDaysSober, parseDateInput, toISODate } from "../utils/date";
 
 const STORAGE_KEY = "soberDate";
 
+// Encapsulates reading/writing the saved sober date and keeping the day count fresh
 export const useSoberDate = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [savedSoberDate, setSavedSoberDate] = useState<Date | null>(null);

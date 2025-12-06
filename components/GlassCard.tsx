@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { palette } from "../theme";
+import { palette } from "../ui/theme";
 
 type Props = PropsWithChildren<{
   padding?: number;
