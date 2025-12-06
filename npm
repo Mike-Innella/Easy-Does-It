@@ -1,0 +1,244 @@
+// App.tsx
+import React, { useEffect, useState } from "react";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+} from "react-native";
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+function parseDateString(value: string): Date | null {
+  // Expecting "YYYY-MM-DD"
+  const [yearStr, monthStr, dayStr] = value.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+
+  if (!year || !month || !day) return null;
+
+  // Construct as local date to avoid timezone shifting issues
+  const date = new Date(year, month - 1, day);
+
+  // Guard against invalid dates like 2025-02-31
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function getDaysSober(startDate: Date | null): number {
+  if (!startDate) return 0;
+
+  const today = new Date();
+
+  const start = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate()
+  );
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const diffMs = end.getTime() - start.getTime();
+  if (diffMs < 0) return 0;
+
+  // Inclusive count: sober day = day 1
+  return Math.floor(diffMs / MS_PER_DAY) + 1;
+}
+
+export default function App() {
+  const [inputDate, setInputDate] = useState<string>("");
+  const [savedDate, setSavedDate] = useState<Date | null>(null);
+  const [error, setError] = useState<string>("");
+
+  const daysSober = getDaysSober(savedDate);
+
+  useEffect(() => {
+    // If you later add AsyncStorage, load saved date here.
+    // For now this stays empty so it’s purely in-memory.
+  }, []);
+
+  const handleSaveDate = () => {
+    setError("");
+
+    const parsed = parseDateString(inputDate.trim());
+    if (!parsed) {
+      setError("Please enter a valid date in YYYY-MM-DD format.");
+      setSavedDate(null);
+      return;
+    }
+
+    setSavedDate(parsed);
+
+    // Example for future persistence:
+    // await AsyncStorage.setItem("soberDate", inputDate.trim());
+  };
+
+  const handleReset = () => {
+    setInputDate("");
+    setSavedDate(null);
+    setError("");
+    // And clear from storage later if you add it
+    // await AsyncStorage.removeItem("soberDate");
+  };
+
+  return (
+    <SafeAreaView style={styles.root}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Sober Day Counter</Text>
+        <Text style={styles.subtitle}>
+          Track how many days you've been clean.
+        </Text>
+
+        <View style={styles.card}>
+          <Text style={styles.label}>Sober since (YYYY-MM-DD)</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="2025-09-03"
+            placeholderTextColor="#6b7280"
+            value={inputDate}
+            onChangeText={setInputDate}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="numbers-and-punctuation"
+          />
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <Pressable style={styles.saveButton} onPress={handleSaveDate}>
+            <Text style={styles.saveButtonText}>Save Date</Text>
+          </Pressable>
+
+          {savedDate && (
+            <View style={styles.savedInfo}>
+              <Text style={styles.savedLabel}>
+                Saved date:{" "}
+                <Text style={styles.savedValue}>
+                  {savedDate.toDateString()}
+                </Text>
+              </Text>
+
+              <Text style={styles.daysText}>
+                <Text style={styles.daysNumber}>{daysSober}</Text> days sober
+              </Text>
+            </View>
+          )}
+
+          <Pressable
+            style={[styles.saveButton, styles.resetButton]}
+            onPress={handleReset}
+          >
+            <Text style={[styles.saveButtonText, styles.resetButtonText]}>
+              Reset
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#020617", // very dark navy
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 32,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 24,
+    color: "#f9fafb",
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#9ca3af",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  card: {
+    backgroundColor: "#020617",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#1e293b",
+    padding: 16,
+  },
+  label: {
+    color: "#e5e7eb",
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  input: {
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: "#1f2933",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: "#f9fafb",
+    fontSize: 16,
+    marginBottom: 12,
+    backgroundColor: "#020617",
+  },
+  errorText: {
+    color: "#f97373",
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  saveButton: {
+    backgroundColor: "#22c55e",
+    borderRadius: 9999,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  saveButtonText: {
+    color: "#022c22",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  savedInfo: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  savedLabel: {
+    color: "#9ca3af",
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  savedValue: {
+    color: "#e5e7eb",
+    fontWeight: "600",
+  },
+  daysText: {
+    fontSize: 20,
+    color: "#eab308",
+    fontWeight: "700",
+  },
+  daysNumber: {
+    fontSize: 24,
+  },
+  resetButton: {
+    marginTop: 24,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#64748b",
+  },
+  resetButtonText: {
+    color: "#e5e7eb",
+  },
+});

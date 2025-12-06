@@ -1,30 +1,53 @@
 {
   "expo": {
-    "name": "sober-counter",
-    "slug": "sober-counter",
+    "name": "Easy Does It",
+    "slug": "easy-does-it",
+    "owner": "mainnella2099",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     },
-    "ios": {
-      "supportsTablet": true
+    "entryPoint": "node_modules/expo/AppEntry.js",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#05070A"
+    },
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#05070A"
     },
     "android": {
+      "package": "com.mainnella2099.easydoesit",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#05070A"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "reactNativeArchitecture": "classic",
+      "permissions": [
+        "INTERNET",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "SCHEDULE_EXACT_ALARM",
+        "RECEIVE_BOOT_COMPLETED",
+        "POST_NOTIFICATIONS"
+      ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "plugins": [
+      "expo-notifications"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "de2456b2-81dc-43ac-9691-d3417a15a43b"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.mainnella2099.easydoesit"
     }
   }
 }
