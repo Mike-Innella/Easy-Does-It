@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -54,6 +54,17 @@ const RECOVERY_LINES = [
   "Make it to the next ten minutes.",
 ];
 
+const AFFIRMATIONS = [
+  "You did the hard thing by showing up today.",
+  "One honest day at a time is enough.",
+  "You are not your past—you are your next choice.",
+  "Slow progress is still real progress.",
+  "You deserve a life that doesn’t hurt to live.",
+  "You’re allowed to be proud of surviving.",
+  "Your feelings are real, but they are not a relapse plan.",
+  "Today is a chance, not a sentence.",
+];
+
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 const getSoberStats = (dateValue: Date | null) => {
@@ -81,6 +92,7 @@ const getSoberStats = (dateValue: Date | null) => {
 const App: React.FC = () => {
   const glowOneAnim = React.useRef(new Animated.Value(0)).current;
   const glowTwoAnim = React.useRef(new Animated.Value(0)).current;
+  const cleanTimeAnim = useRef(new Animated.Value(0)).current;
   const [firstName, setFirstName] = useState("");
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -259,20 +271,63 @@ const App: React.FC = () => {
     return `Daily nudge at ${timeLabel}.`;
   }, [nextReminderTime]);
 
-  const { formattedLabel } = useMemo(
+  const { totalDays: cleanTimeInDays, formattedLabel } = useMemo(
     () => getSoberStats(savedSoberDate),
     [savedSoberDate]
   );
+
+  const cleanTimeLabel = formattedLabel ? `${formattedLabel} clean` : "";
 
   const dailyRecoveryLine = useMemo(() => {
     const daysSinceEpoch = Math.floor(Date.now() / MS_PER_DAY);
     return RECOVERY_LINES[daysSinceEpoch % RECOVERY_LINES.length];
   }, []);
 
+  const milestoneLabel = useMemo(() => {
+    if (!cleanTimeInDays || cleanTimeInDays < 1) return "";
+
+    if (cleanTimeInDays >= 365 * 4) return "4+ years clean 💚";
+    if (cleanTimeInDays >= 365 * 3) return "3 years clean 💚";
+    if (cleanTimeInDays >= 365 * 2) return "2 years clean 💚";
+    if (cleanTimeInDays >= 365 + 182) return "18 months clean 💚";
+    if (cleanTimeInDays >= 365) return "1 year clean 💚";
+    if (cleanTimeInDays >= 180) return "6 months clean 💚";
+    if (cleanTimeInDays >= 90) return "90 days clean 💚";
+    if (cleanTimeInDays >= 30) return "30 days clean 💚";
+
+    return "";
+  }, [cleanTimeInDays]);
+
+  const today = new Date();
+  const dayKey = today.getFullYear() * 1000 + (today.getMonth() + 1) * 50 + today.getDate();
+  const affirmation = AFFIRMATIONS[Math.abs(dayKey) % AFFIRMATIONS.length];
+
+  useEffect(() => {
+    if (!cleanTimeLabel) return;
+
+    cleanTimeAnim.setValue(0);
+
+    Animated.timing(cleanTimeAnim, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [cleanTimeLabel, cleanTimeAnim]);
+
+  const cleanTimeScale = cleanTimeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.05],
+  });
+
+  const cleanTimeOpacity = cleanTimeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.4, 1],
+  });
+
   const headerLine = isProfileModalVisible
     ? "Welcome. Let's set your name to start."
-    : firstName && formattedLabel
-    ? `${firstName}, you have ${formattedLabel} clean time.`
+    : firstName && cleanTimeLabel
+    ? `${firstName}, you have ${cleanTimeLabel}.`
     : firstName
     ? `${firstName}, set your sober date to start tracking.`
     : "Welcome. Let's set your name to start.";
@@ -322,6 +377,24 @@ const App: React.FC = () => {
             onSave={saveSoberDate}
             error={error}
           />
+
+          {cleanTimeLabel ? (
+            <View style={styles.cleanTimeCard}>
+              <Animated.Text
+                style={[
+                  styles.cleanTimeText,
+                  {
+                    transform: [{ scale: cleanTimeScale }],
+                    opacity: cleanTimeOpacity,
+                  },
+                ]}
+              >
+                {cleanTimeLabel}
+              </Animated.Text>
+              {!!milestoneLabel && <Text style={styles.milestoneText}>{milestoneLabel}</Text>}
+              <Text style={styles.affirmationText}>{affirmation}</Text>
+            </View>
+          ) : null}
 
           <ReminderToggle
             enabled={reminderEnabled}
@@ -442,6 +515,32 @@ const styles = StyleSheet.create({
     shadowRadius: 110,
     shadowOffset: { width: 0, height: 0 },
     zIndex: 0,
+  },
+  cleanTimeCard: {
+    marginTop: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: "#E9F6EF",
+    alignItems: "center",
+  },
+  cleanTimeText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2F8F5B",
+  },
+  milestoneText: {
+    marginTop: 4,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2F8F5B",
+  },
+  affirmationText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#4F5E57",
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
 
