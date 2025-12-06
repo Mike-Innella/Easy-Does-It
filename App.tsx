@@ -3,6 +3,7 @@ import {
   Animated,
   Easing,
   Pressable,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -92,6 +93,9 @@ const getSoberStats = (dateValue: Date | null) => {
 const App: React.FC = () => {
   const glowOneAnim = React.useRef(new Animated.Value(0)).current;
   const glowTwoAnim = React.useRef(new Animated.Value(0)).current;
+  const glowThreeAnim = React.useRef(new Animated.Value(0)).current;
+  const glowFourAnim = React.useRef(new Animated.Value(0)).current;
+  const glowFiveAnim = React.useRef(new Animated.Value(0)).current;
   const cleanTimeAnim = useRef(new Animated.Value(0)).current;
   const [firstName, setFirstName] = useState("");
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
@@ -123,7 +127,10 @@ const App: React.FC = () => {
 
     loopGlow(glowOneAnim, 14000);
     loopGlow(glowTwoAnim, 16000, 800);
-  }, [glowOneAnim, glowTwoAnim]);
+    loopGlow(glowThreeAnim, 12000, 400);
+    loopGlow(glowFourAnim, 18000, 1000);
+    loopGlow(glowFiveAnim, 20000, 1600);
+  }, [glowFiveAnim, glowFourAnim, glowOneAnim, glowThreeAnim, glowTwoAnim]);
 
   const glowOneStyle = {
     transform: [
@@ -179,6 +186,87 @@ const App: React.FC = () => {
     }),
   };
 
+  const glowThreeStyle = {
+    transform: [
+      {
+        translateX: glowThreeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-40, 30],
+        }),
+      },
+      {
+        translateY: glowThreeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [60, -20],
+        }),
+      },
+      {
+        scale: glowThreeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.92, 1.08],
+        }),
+      },
+    ],
+    opacity: glowThreeAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.14, 0.24],
+    }),
+  };
+
+  const glowFourStyle = {
+    transform: [
+      {
+        translateX: glowFourAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [30, -25],
+        }),
+      },
+      {
+        translateY: glowFourAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [20, -30],
+        }),
+      },
+      {
+        scale: glowFourAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.9, 1.1],
+        }),
+      },
+    ],
+    opacity: glowFourAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.12, 0.2],
+    }),
+  };
+
+  const glowFiveStyle = {
+    transform: [
+      {
+        translateX: glowFiveAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-20, 40],
+        }),
+      },
+      {
+        translateY: glowFiveAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [40, -10],
+        }),
+      },
+      {
+        scale: glowFiveAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.88, 1.12],
+        }),
+      },
+    ],
+    opacity: glowFiveAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.1, 0.18],
+    }),
+  };
+
   const {
     selectedDate,
     setSelectedDate,
@@ -186,6 +274,7 @@ const App: React.FC = () => {
     daysSober,
     error,
     saveSoberDate,
+    clearSoberDate,
   } = useSoberDate();
 
   const {
@@ -242,6 +331,11 @@ const App: React.FC = () => {
       console.warn("Failed to save profile", e);
       setProfileError("Could not save profile.");
     }
+  };
+
+  const handleOpenProfile = () => {
+    setProfileError("");
+    setIsProfileModalVisible(true);
   };
 
   const handleReminderToggle = async () => {
@@ -351,6 +445,9 @@ const App: React.FC = () => {
       />
       <Animated.View style={[styles.glowOne, glowOneStyle]} />
       <Animated.View style={[styles.glowTwo, glowTwoStyle]} />
+      <Animated.View style={[styles.glowThree, glowThreeStyle]} />
+      <Animated.View style={[styles.glowFour, glowFourStyle]} />
+      <Animated.View style={[styles.glowFive, glowFiveStyle]} />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <AppHeader
@@ -361,6 +458,11 @@ const App: React.FC = () => {
           <View style={styles.headerCopy}>
             <Text style={styles.primaryLine}>{headerLine}</Text>
             <Text style={styles.recoveryLine}>{dailyRecoveryLine}</Text>
+            {!isProfileModalVisible ? (
+              <Pressable onPress={handleOpenProfile} style={styles.secondaryLink}>
+                <Text style={styles.secondaryLinkText}>Change name</Text>
+              </Pressable>
+            ) : null}
           </View>
 
           {isProfileModalVisible ? (
@@ -380,29 +482,35 @@ const App: React.FC = () => {
             </View>
           ) : null}
 
-          <DateInputCard
-            value={selectedDate}
-            onChange={setSelectedDate}
-            onSave={saveSoberDate}
-            error={error}
-          />
+          {!isProfileModalVisible ? (
+            <>
+              <DateInputCard
+                value={selectedDate}
+                onChange={setSelectedDate}
+                onSave={saveSoberDate}
+                onReset={clearSoberDate}
+                showReset={!!savedSoberDate}
+                error={error}
+              />
 
-          {cleanTimeLabel ? (
-            <View style={styles.cleanTimeCard}>
-              <Animated.Text
-                style={[
-                  styles.cleanTimeText,
-                  {
-                    transform: [{ scale: cleanTimeScale }],
-                    opacity: cleanTimeOpacity,
-                  },
-                ]}
-              >
-                {cleanTimeLabel}
-              </Animated.Text>
-              {!!milestoneLabel && <Text style={styles.milestoneText}>{milestoneLabel}</Text>}
-              <Text style={styles.affirmationText}>{affirmation}</Text>
-            </View>
+              {cleanTimeLabel ? (
+                <View style={styles.cleanTimeCard}>
+                  <Animated.Text
+                    style={[
+                      styles.cleanTimeText,
+                      {
+                        transform: [{ scale: cleanTimeScale }],
+                        opacity: cleanTimeOpacity,
+                      },
+                    ]}
+                  >
+                    {cleanTimeLabel}
+                  </Animated.Text>
+                  {!!milestoneLabel && <Text style={styles.milestoneText}>{milestoneLabel}</Text>}
+                  <Text style={styles.affirmationText}>{affirmation}</Text>
+                </View>
+              ) : null}
+            </>
           ) : null}
 
           <ReminderToggle
@@ -424,6 +532,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: palette.background,
+    ...(Platform.OS === "web" ? { minHeight: "100vh" } : null),
   },
   safeArea: {
     flex: 1,
@@ -455,6 +564,15 @@ const styles = StyleSheet.create({
   recoveryLine: {
     color: palette.textFaint,
     fontSize: 13,
+    textAlign: "center",
+  },
+  secondaryLink: {
+    marginTop: 6,
+  },
+  secondaryLinkText: {
+    color: palette.accent,
+    fontSize: 13,
+    fontWeight: "700",
     textAlign: "center",
   },
   profileCard: {
@@ -522,6 +640,48 @@ const styles = StyleSheet.create({
     shadowColor: palette.accentDeep,
     shadowOpacity: 0.6,
     shadowRadius: 110,
+    shadowOffset: { width: 0, height: 0 },
+    zIndex: 0,
+  },
+  glowThree: {
+    position: "absolute",
+    bottom: -120,
+    left: -160,
+    width: 220,
+    height: 220,
+    backgroundColor: palette.accentSecondary,
+    borderRadius: 200,
+    shadowColor: palette.accentSecondary,
+    shadowOpacity: 0.4,
+    shadowRadius: 80,
+    shadowOffset: { width: 0, height: 0 },
+    zIndex: 0,
+  },
+  glowFour: {
+    position: "absolute",
+    bottom: 140,
+    left: 120,
+    width: 180,
+    height: 180,
+    backgroundColor: "#5ed0ff",
+    borderRadius: 180,
+    shadowColor: "#5ed0ff",
+    shadowOpacity: 0.35,
+    shadowRadius: 70,
+    shadowOffset: { width: 0, height: 0 },
+    zIndex: 0,
+  },
+  glowFive: {
+    position: "absolute",
+    top: -160,
+    right: -80,
+    width: 160,
+    height: 160,
+    backgroundColor: "#2dd36f",
+    borderRadius: 160,
+    shadowColor: "#2dd36f",
+    shadowOpacity: 0.35,
+    shadowRadius: 70,
     shadowOffset: { width: 0, height: 0 },
     zIndex: 0,
   },

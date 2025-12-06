@@ -12,10 +12,19 @@ type Props = {
   value: Date | null;
   onChange: (date: Date) => void;
   onSave: () => void;
+  onReset?: () => void;
+  showReset?: boolean;
   error?: string;
 };
 
-const DateInputCard: React.FC<Props> = ({ value, onChange, onSave, error }) => {
+const DateInputCard: React.FC<Props> = ({
+  value,
+  onChange,
+  onSave,
+  onReset,
+  showReset,
+  error,
+}) => {
   const [showPicker, setShowPicker] = useState(false);
 
   const label = useMemo(() => {
@@ -67,6 +76,12 @@ const DateInputCard: React.FC<Props> = ({ value, onChange, onSave, error }) => {
       <Pressable style={styles.primaryButton} onPress={onSave}>
         <Text style={styles.primaryButtonText}>Save Date</Text>
       </Pressable>
+
+      {showReset && onReset ? (
+        <Pressable style={styles.resetButton} onPress={onReset}>
+          <Text style={styles.resetButtonText}>Reset date</Text>
+        </Pressable>
+      ) : null}
     </GlassCard>
   );
 };
@@ -146,6 +161,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.3,
+  },
+  resetButton: {
+    marginTop: 10,
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  resetButtonText: {
+    color: palette.textMuted,
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 
