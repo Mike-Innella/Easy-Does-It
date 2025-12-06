@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
-import { RECOVERY_LINES } from "../copy";
-import { MS_PER_DAY } from "../soberStats";
+import { RECOVERY_LINES } from "../lib/copy";
+import { MS_PER_DAY } from "../lib/soberStats";
 
 // Rotate through recovery lines using the day number to keep it stable for 24 hours
 export const useDailyRecoveryLine = () => {

@@ -1,13 +1,14 @@
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, ViewStyle } from "react-native";
 
 import { palette } from "./theme";
 
+const rootStyle: ViewStyle =
+  Platform.OS === "web"
+    ? ({ flex: 1, backgroundColor: palette.background, minHeight: "100vh" } as unknown as ViewStyle)
+    : { flex: 1, backgroundColor: palette.background };
+
 export const appStyles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: palette.background,
-    ...(Platform.OS === "web" ? { minHeight: "100vh" } : null),
-  },
+  root: rootStyle,
   safeArea: {
     flex: 1,
     zIndex: 2,

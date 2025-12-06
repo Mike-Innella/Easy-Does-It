@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { AFFIRMATIONS } from "../copy";
+import { AFFIRMATIONS } from "../lib/copy";
 
 // Pick a single affirmation when the app session starts
 export const useAffirmation = () => {

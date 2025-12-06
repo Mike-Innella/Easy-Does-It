@@ -9,6 +9,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: false,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -74,7 +76,12 @@ export const useDailyReminder = () => {
             title: "Stay steady",
             body,
           },
-          trigger: { hour: 9, minute: 0, repeats: true },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+            hour: 9,
+            minute: 0,
+            repeats: true,
+          },
         });
 
         await AsyncStorage.setItem(REMINDER_STORAGE_KEY, id);
