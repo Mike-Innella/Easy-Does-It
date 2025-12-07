@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, Text, View } from "react-native";
 
-import { palette } from "../ui/theme";
+import { cleanTimeCardStyles as styles } from "../ui/cleanTimeCardStyles";
 
 type Props = {
   cleanTimeLabel: string;
@@ -57,36 +57,5 @@ const CleanTimeCard: React.FC<Props> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  cleanTimeCard: {
-    marginTop: 16,
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    backgroundColor: "#E9F6EF",
-    alignItems: "center",
-    minHeight: 140,
-  },
-  cleanTimeText: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#2F8F5B",
-  },
-  milestoneText: {
-    marginTop: 4,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2F8F5B",
-  },
-  affirmationText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#4F5E57",
-    textAlign: "center",
-    lineHeight: 20,
-    fontStyle: "italic",
-  },
-});
 
 export default CleanTimeCard;

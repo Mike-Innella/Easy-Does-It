@@ -1,7 +1,8 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 
 import { palette } from "../ui/theme";
+import { profileCardStyles as styles } from "../ui/profileCardStyles";
 
 type Props = {
   value: string;
@@ -29,46 +30,5 @@ const ProfileCard: React.FC<Props> = ({ value, onChange, error, onSave }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  profileCard: {
-    width: "100%",
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: palette.backgroundAlt,
-    borderWidth: 1,
-    borderColor: palette.cardBorder,
-    gap: 10,
-  },
-  profileTitle: {
-    color: palette.textPrimary,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  input: {
-    backgroundColor: palette.background,
-    borderColor: palette.cardBorder,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: palette.textPrimary,
-  },
-  primaryButton: {
-    backgroundColor: palette.accent,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: palette.textPrimary,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  errorText: {
-    color: palette.error,
-    fontSize: 13,
-  },
-});
 
 export default ProfileCard;

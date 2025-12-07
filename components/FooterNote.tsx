@@ -1,7 +1,7 @@
 import React from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 
-import { palette } from "../ui/theme";
+import { footerNoteStyles as styles } from "../ui/footerNoteStyles";
 
 const FooterNote: React.FC = () => {
   return (
@@ -16,19 +16,5 @@ const FooterNote: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  wrapper: {
-    marginTop: 24,
-    paddingHorizontal: 8,
-    gap: 4,
-  },
-  footerText: {
-    fontSize: 12,
-    color: palette.textMuted,
-    textAlign: "center",
-    letterSpacing: 0.1,
-  },
-});
 
 export default FooterNote;

@@ -47,7 +47,10 @@
       }
     },
     "ios": {
-      "bundleIdentifier": "com.mainnella2099.easydoesit"
+      "bundleIdentifier": "com.mainnella2099.easydoesit",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     }
   }
 }
